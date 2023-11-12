@@ -3,21 +3,19 @@
 
 #define MAX_USERS 10
 
+// Union to represent user activity status
+union UserStatus {
+    int active;  // Flag to indicate user activity (1 for active, 0 for inactive)
+    float dummy; // A dummy member to ensure the union size is the same as the largest member
+};
+
 struct User {
     char username[20];
     char password[20];
-};
-
-union UserActivity {
-    struct {
-        int isActive : 1;
-        int activityFlag;
-    };
+    union UserStatus status; // Union to represent user status
 };
 
 struct User users[MAX_USERS];
-union UserActivity userActivity[MAX_USERS];
-
 int numUsers = 0;
 
 int isUserRegistered(const char *username) {
@@ -31,14 +29,12 @@ int isUserRegistered(const char *username) {
 
 void registerUser() {
     if (numUsers >= MAX_USERS) {
-        printf("Sorry, the maximum number of registered users has been exceeded.\n");
+        printf("Maximum number of registered users exceeded.\n");
         return;
     }
 
     struct User newUser;
-    union UserActivity newActivity;
-
-    printf("Please enter the username: ");
+    printf("Please enter a username: ");
     scanf("%s", newUser.username);
 
     if (isUserRegistered(newUser.username)) {
@@ -46,28 +42,29 @@ void registerUser() {
         return;
     }
 
-    printf("Please enter the password: ");
+    printf("Please enter a password: ");
     scanf("%s", newUser.password);
 
-    users[numUsers] = newUser;
-    newActivity.isActive = 0; // Corrected the member name here
-    userActivity[numUsers] = newActivity;
-    numUsers++;
+    // Set the user as active by default
+    newUser.status.active = 1;
 
+    users[numUsers] = newUser;
+    numUsers++;
     printf("User registered successfully!\n");
 }
 
 int loginUser(const char *username, const char *password) {
     for (int i = 0; i < numUsers; i++) {
         if (strcmp(users[i].username, username) == 0 && strcmp(users[i].password, password) == 0) {
-            if (userActivity[i].isActive == 1) { // Corrected the member name here
-                return 1;
+            if (users[i].status.active) {
+                return 1; // User is active, login successful
             } else {
-                return 2;
+                printf("User is inactive. Please contact support for assistance.\n");
+                return 0; // User is inactive, login failed
             }
         }
     }
-    return 0;
+    return 0; // Username or password is incorrect
 }
 
 int main() {
@@ -76,9 +73,9 @@ int main() {
     char password[20];
 
     while (1) {
-        printf("\nPlease choose an action:\n");
+        printf("\nPlease select an action:\n");
         printf("1. Register a new user\n");
-        printf("2. Login\n");
+        printf("2. Log in\n");
         printf("3. Exit\n");
         printf("Choice: ");
         scanf("%d", &choice);
@@ -88,23 +85,20 @@ int main() {
                 registerUser();
                 break;
             case 2:
-                printf("Please enter the username: ");
+                printf("Please enter your username: ");
                 scanf("%s", username);
-                printf("Please enter the password: ");
+                printf("Please enter your password: ");
                 scanf("%s", password);
-                int loginStatus = loginUser(username, password);
-                if (loginStatus == 1) {
+                if (loginUser(username, password)) {
                     printf("Login successful!\n");
-                } else if (loginStatus == 2) {
-                    printf("The account exists but is inactive. Please check the activity.\n");
                 } else {
-                    printf("Login failed. Please check the username and password.\n");
+                    printf("Login failed. Please check your username and password.\n");
                 }
                 break;
             case 3:
                 return 0;
             default:
-                printf("Please choose a valid option.\n");
+                printf("Please select a valid option.\n");
         }
     }
 
